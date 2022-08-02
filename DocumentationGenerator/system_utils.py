@@ -42,8 +42,7 @@ class SystemUtils:
 
             for basename in files:
                 if fnmatch.fnmatch(basename, pattern):
-                    filename = os.path.join(root, basename)
-                    yield filename
+                    yield os.path.join(root, basename)
 
     ###
     # removes files from a folder.
@@ -76,12 +75,11 @@ class SystemUtils:
             d = os.path.join(dst, item)
             if os.path.isdir(s):
                 self.copytree(s, d, symlinks, ignore)
-            else:
-                if not os.path.exists(d) or os.stat(s).st_mtime - os.stat(d).st_mtime > 1:
-                    shutil.copy2(s, d)
+            elif not os.path.exists(d) or os.stat(s).st_mtime - os.stat(d).st_mtime > 1:
+                shutil.copy2(s, d)
 
     def __add_version_info(self,version_string, extract_location):
-        content_path = extract_location + "js/base.js"
+        content_path = f"{extract_location}js/base.js"
         lines = self.read(content_path)
         html_string = '<div class=\'admonition warning\' style=\'margin-top:30px;\'><p class=\'admonition-title\'>Warning</p><p>You are viewing documentation for <b>' + version_string + '</b></p></div>'
         lines[0]= '$(document).ready(function() { $(\'div[role="main"]\').prepend("' + html_string + '") });'
@@ -99,20 +97,28 @@ class SystemUtils:
         if module_strings[1:] != module_strings[:-1]:
             raise Exception("Version mismatch exception! microbit-dal and microbit are not compatible versions.")
 
-        module_string = "v" + str(module_strings[0])
+        module_string = f"v{str(module_strings[0])}"
 
         if mkdocs_yml["versioning"]["runtime"] != module_string:
             #capture old site, save in docs/historic/versionNumber
-            zip_dest = working_dir + "/" + str(mkdocs_yml["versioning"]["runtime"]) + ".zip"
+            zip_dest = (
+                f"{working_dir}/"
+                + str(mkdocs_yml["versioning"]["runtime"])
+                + ".zip"
+            )
 
-            extract_folder = extract_location+ "/" + mkdocs_yml["versioning"]["runtime"]+"/"
+
+            extract_folder = (
+                f"{extract_location}/" + mkdocs_yml["versioning"]["runtime"] + "/"
+            )
+
 
             urllib.urlretrieve("https://github.com/lancaster-university/microbit-docs/archive/gh-pages.zip", zip_dest)
 
             zip_ref = zipfile.ZipFile(zip_dest)
 
             #obtain the archive prepended name
-            archive_name = working_dir + "/" + zip_ref.namelist()[0]
+            archive_name = f"{working_dir}/{zip_ref.namelist()[0]}"
 
             zip_ref.extractall(working_dir)
             zip_ref.close()

@@ -58,7 +58,10 @@ class MarkdownConverter:
     def derive_functions(self, member_func):
         member_functions_derived = []
 
-        if len(member_func['params']) is not 0:
+        if len(member_func['params']) is 0:
+            member_functions_derived += [member_func]
+
+        else:
 
             param_index = 0;
 
@@ -79,10 +82,10 @@ class MarkdownConverter:
                 'return_type' : member_func['return_type'],
             }
 
-            for i in range(0, param_index):
+            for i in range(param_index):
                 bare_function['params'] = bare_function['params'] + [member_func['params'][i]]
 
-            member_functions_derived = member_functions_derived + [bare_function]
+            member_functions_derived += [bare_function]
 
             current = copy.copy(bare_function)
 
@@ -91,9 +94,6 @@ class MarkdownConverter:
                 current['params'] = current['params'] + [member_func['params'][remainder]]
                 member_functions_derived = member_functions_derived + [current]
                 current = copy.copy(current)
-
-        else:
-            member_functions_derived = member_functions_derived + [member_func]
 
         return member_functions_derived
 
@@ -108,21 +108,20 @@ class MarkdownConverter:
         text = "\n> "
 
         if param['type'] is not None:
-            text = text + " " + self.wrap_text(param['type'], self.type_colour)
+            text = f"{text} " + self.wrap_text(param['type'], self.type_colour)
 
-        text = text + " " + param['name']
+        text = f"{text} " + param['name']
 
-        if self.display_defaults:
-            if len(param['default']['name']) is not 0:
-                text = text + " `= " + param['default']['name']
+        if self.display_defaults and len(param['default']['name']) is not 0:
+            text = f"{text} `= " + param['default']['name']
 
-                if len(param['default']['value']) is not 0:
-                    text = text + param['default']['value']
+            if len(param['default']['value']) is not 0:
+                text += param['default']['value']
 
-                text = text + "`"
+            text = f"{text}`"
 
         if 'description' in param.keys():
-            text = text +" - " + param['description']
+            text = f"{text} - " + param['description']
 
         text = text.encode('ascii','ignore')
 
@@ -167,7 +166,7 @@ class MarkdownConverter:
             #we want to clearly separate our different level of functions in the DAL
             #so we present methods with defaults as overloads.
             if self.separate_defaults is True:
-                member_functions_derived = member_functions_derived + self.derive_functions(member_func)
+                member_functions_derived += self.derive_functions(member_func)
 
             for derived_func in member_functions_derived:
                 #---- short name for urls ----
@@ -190,9 +189,9 @@ class MarkdownConverter:
                     text = ""
 
                     if param['type'] is not None:
-                        text = text + " " + self.wrap_text(param['type'], self.type_colour)
+                        text = f"{text} " + self.wrap_text(param['type'], self.type_colour)
 
-                    text = text + " " + param['name']
+                    text = f"{text} " + param['name']
 
                     if param is not last_param:
                         short_name = short_name + text +", "
@@ -204,38 +203,47 @@ class MarkdownConverter:
 
                 #---- description ----
                 if len(derived_func['description']) is not 0:
-                    lines.append("#####Description\n")
-                    lines.append(' '.join(derived_func['description']) + "\n")
+                    lines.extend(
+                        (
+                            "#####Description\n",
+                            ' '.join(derived_func['description']) + "\n",
+                        )
+                    )
+
                 #-----------------------------
 
                 #---- parameters ----
                 if len(derived_func['params']) is not 0:
                     lines.append("#####Parameters\n")
 
-                    for param in derived_func['params']:
-                        lines.append(self.gen_param_text(param) + "\n")
+                    lines.extend(
+                        self.gen_param_text(param) + "\n"
+                        for param in derived_func['params']
+                    )
+
                 #-----------------------------
 
                 #---- returns ----
                 if len(derived_func['returns']) is not 0:
-                    lines.append("#####Returns\n")
-                    lines.append(derived_func['returns'] + "\n")
+                    lines.extend(("#####Returns\n", derived_func['returns'] + "\n"))
                 #-----------------------------
 
                 #---- examples ----
                 if len(derived_func['examples']) is not 0:
-                    lines.append("#####Example\n")
-                    lines.append("```cpp\n")
-                    lines.append(derived_func['examples'])
-                    lines.append("```\n")
+                    lines.extend(("#####Example\n", "```cpp\n", derived_func['examples'], "```\n"))
                 #-----------------------------
 
                 #---- notes ----
                 if len(derived_func['notes']) is not 0:
-                    lines.append("\n!!! note\n")
-                    lines.append("    " + derived_func['notes'].replace('\n','\n    '))
-                    lines.append('\n\n')
-                #-----------------------------
+                    lines.extend(
+                        (
+                            "\n!!! note\n",
+                            "    " + derived_func['notes'].replace('\n', '\n    '),
+                            '\n\n',
+                        )
+                    )
+
+                        #-----------------------------
 
         lines.append("____\n")
 

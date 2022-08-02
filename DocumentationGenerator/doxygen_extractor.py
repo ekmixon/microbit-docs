@@ -61,9 +61,7 @@ class DoxygenExtractor:
         if element.text is not None:
             list.append(element.text)
 
-        for ref in element.iter(tag="ref"):
-            list.append(ref.text)
-
+        list.extend(ref.text for ref in element.iter(tag="ref"))
         return list
 
     ###
@@ -75,12 +73,7 @@ class DoxygenExtractor:
     # @return a list of extracted strings.
     ###
     def extract_with_subelements(self, element):
-        list = []
-
-        list.append(element.text or "")
-
-        #if element.text is not None:
-            #list.append(element.text)
+        list = [element.text or ""]
 
         for subelement in element:
             if subelement is not None:
